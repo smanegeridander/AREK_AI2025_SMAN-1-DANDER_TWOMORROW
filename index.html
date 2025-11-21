@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="jv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌙 WULANÉ!</title>
+<style>
+body { font-family: "Poppins", sans-serif; margin:0; padding:0; background:#fff0f5; overflow-x:hidden; }
+#intro { position:fixed; top:0; left:0; width:100%; height:100%; background:linear-gradient(#fff0f5,#ffe6f0); display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:10; overflow:hidden; }
+#intro h1 { font-size:3em; color:#d63384; text-align:center; margin-bottom:20px; }
+#intro button { background:#d63384; color:white; border:none; padding:15px 30px; border-radius:12px; cursor:pointer; font-size:1.2em; }
+#intro button:hover { background:#b92d73; }
+.petal { position:absolute; width:15px; height:15px; background:pink; border-radius:50%; opacity:0.7; pointer-events:none; animation:fall linear infinite; }
+@keyframes fall { 0%{transform:translateY(-50px) rotate(0deg); opacity:1;} 100%{transform:translateY(110vh) rotate(360deg); opacity:0;} }
+
+#main { display:none; padding:20px; }
+h2{ text-align:center; color:#d63384; margin-bottom:10px; }
+
+.card { background:#fff; padding:15px; margin:15px auto; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); max-width:400px; }
+label{ display:block; margin-bottom:5px; font-weight:600; }
+input{ width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; margin-bottom:10px; }
+button.main-btn{ background:#d63384; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; width:100%; }
+button.main-btn:hover{ background:#b92d73; }
+
+.calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-top:10px; }
+.day{ text-align:center; padding:6px; border-radius:6px; font-size:12px; }
+.period{ background:#ffe6ea; border:1px solid #ff8ba0; }
+.fertile{ background:#fff6cc; border:1px solid #ffd43b; }
+.ovulation{ background:#e0eaff; border:1px solid #91a7ff; }
+
+.section-title{ font-weight:bold; margin-bottom:6px; }
+.feeling-btn{ background:#f2f2f2; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; margin-right:4px; }
+.tips-box{ background:#ffeaf0; padding:10px; border-radius:8px; font-size:14px; }
+footer{ text-align:center; margin-top:20px; font-size:12px; color:gray; }
+
+.month-title{ text-align:center; font-weight:bold; margin-top:20px; font-size:18px; color:#d63384; }
+</style>
+</head>
+<body>
+
+<!-- Intro Page -->
+<div id="intro">
+  <h1>🌙 WULANÉ!</h1>
+  <p style="text-align:center;">Kalender Menstruasi & Tips Basa Jawa</p>
+  <button onclick="startApp()">Mulai</button>
+</div>
+
+<!-- Main Page -->
+<div id="main">
+  <div class="card">
+    <label>Tanggal haid pungkasan:</label>
+    <input type="date" id="lastPeriod" />
+    <label>Dawa siklus (dina):</label>
+    <input type="number" id="cycleLength" value="28" />
+    <label>Dawa haid (dina):</label>
+    <input type="number" id="periodLength" value="5" />
+    <button class="main-btn" onclick="predictCycle()">Hitung</button>
+  </div>
+
+  <div id="calendarContainer"></div>
+
+  <div class="card">
+    <div class="section-title">💡 Tips & Trick</div>
+    <div class="tips-box">
+      <p>🩸 *Keram perut?* Coba kompres anget, turu cukup, lan ngombe banyu anget.</p>
+      <p>⏰ *Keterlambatan haid?* Njaga pola turu, mangan bergizi, lan kurangi stres.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">🩷 Pilihan Perasaanmu Dina Iki</div>
+    <div>
+      <button class="feeling-btn" onclick="showTip('kesel')">😣 Kesel</button>
+      <button class="feeling-btn" onclick="showTip('sedih')">😭 Sedih</button>
+      <button class="feeling-btn" onclick="showTip('tenang')">😌 Tenang</button>
+      <button class="feeling-btn" onclick="showTip('senang')">😁 Senang</button>
+    </div>
+    <p id="feelingTip" style="margin-top:10px; font-style:italic;"></p>
+  </div>
+
+  <footer>© <span id="year"></span> WULANÉ! — Basa Jawa.</footer>
+</div>
+
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+
+function startApp(){
+  document.getElementById('intro').style.display='none';
+  document.getElementById('main').style.display='block';
+}
+
+function predictCycle(){
+  const last=document.getElementById('lastPeriod').value;
+  const cycle=parseInt(document.getElementById('cycleLength').value);
+  const period=parseInt(document.getElementById('periodLength').value);
+  if(!last) return alert('Pilih tanggal haid pungkasan dhisik!');
+  if(cycle<=0||period<=0) return alert('Isi dawa siklus lan haid kanthi angka positif!');
+
+  const startDate=new Date(last);
+  const predictions=[];
+  for(let i=0;i<6;i++){
+    const ps=new Date(startDate); ps.setDate(ps.getDate()+i*cycle);
+    const pe=new Date(ps); pe.setDate(ps.getDate()+period-1);
+    const fs=new Date(ps); fs.setDate(ps.getDate()+cycle-19);
+    const fe=new Date(fs); fe.setDate(fs.getDate()+5);
+    const ov=new Date(ps); ov.setDate(ps.getDate()+cycle-14);
+    predictions.push({ps,pe,fs,fe,ov});
+  }
+
+  renderCalendar(predictions);
+}
+
+function renderCalendar(predictions){
+  const calContainer=document.getElementById('calendarContainer');
+  calContainer.innerHTML='';
+
+  const now=new Date();
+  const monthsToShow=6;
+
+  for(let m=0;m<monthsToShow;m++){
+    const monthDate=new Date(now.getFullYear(), now.getMonth()+m,1);
+    const monthName=monthDate.toLocaleString('jv',{month:'long', year:'numeric'});
+    calContainer.innerHTML += `<div class="month-title">${monthName}</div>`;
+    calContainer.innerHTML += `<div class="calendar" id="calendar-${m}"></div>`;
+
+    const daysInMonth=new Date(monthDate.getFullYear(), monthDate.getMonth()+1,0).getDate();
+    const cal=document.getElementById(`calendar-${m}`);
+
+    for(let d=1; d<=daysInMonth; d++){
+      const date=new Date(monthDate.getFullYear(), monthDate.getMonth(),d);
+      let cls='day';
+      let label='';
+      for(const p of predictions){
+        if(date>=p.ps && date<=p.pe){ cls+=' period'; label='Haid'; break;}
+        if(date>=p.fs && date<=p.fe){ cls+=' fertile'; label='Subur'; break;}
+        if(date.toDateString()===p.ov.toDateString()){ cls+=' ovulation'; label='Ovulasi'; break;}
+      }
+      cal.innerHTML += `<div class="${cls}">${d}<div style='font-size:10px;'>${label}</div></div>`;
+    }
+  }
+}
+
+function showTip(feeling){
+  let tip='';
+  switch(feeling){
+    case 'kesel': tip='Ngaso sek, turu cukup, lan ngombe banyu anget. Coba stretching entheng.'; break;
+    case 'sedih': tip='Ora papa rumangsa sedih. Coba ngrungokake musik alus utawa ngobrol karo kanca cedhak.'; break;
+    case 'tenang': tip='Bagus! Tetep njaga ketenanganmu karo maca buku utawa ngopi santai.'; break;
+    case 'senang': tip='Seneng banget krungu kuwi! Sebar energi positifmu marang wong liya dina iki.'; break;
+  }
+  document.getElementById('feelingTip').textContent=tip;
+}
+
+// Animasi petals
+for(let i=0;i<30;i++){
+  let petal=document.createElement('div');
+  petal.className='petal';
+  petal.style.left=Math.random()*100+'vw';
+  petal.style.animationDuration=5+Math.random()*5+'s';
+  petal.style.width=10+Math.random()*15+'px';
+  petal.style.height=petal.style.width;
+  document.getElementById('intro').appendChild(petal);
+}
+</script>
+
+</body>
+</html>
